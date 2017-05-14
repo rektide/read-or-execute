@@ -13,6 +13,14 @@ function checkExecutable( stat){
 	return stat.mode& execMode
 }
 
+function childErr( child){
+	return new Promise(( resolve, reject)=>{
+		child.on( "error", function(err){
+			reject( err)
+		})
+	})
+}
+
 async function readOrExecute( path, options){
 	options= options|| {}
 
@@ -43,13 +51,32 @@ async function readOrExecute( path, options){
 	if( isExecutable){
 		// spawn child
 		var child = spawn( options.path, options.arguments, options)
+		// node instructs us to asynchronously wait for "error" event
+		// but offers no way to check success for a program that for ex starts and sleeps
+		// i grok this, we're rolling with it:
 		if( !child.pid){
-			// node instructs us to synchronously wait for error
-			// but this is easier and that'd be lame
-			// consume error
-			child.on("error", x=> null)
-			// try again, doing what createReadFile would do for us
-			child = spawn( "./" + options.path, options.arguments, options)
+			// promise that will throw with the error
+			var err= childErr( child)
+
+			// allow users to opt out of this "enhacement"
+			if( options.noLocalSpawn){
+				// return a promise that will throw with the error
+				return err
+			// by default, act like a createReadFile and try ./[filename] too
+			} else{
+				// try again, doing what createReadFile would do for us
+				child = spawn( "./" + options.path, options.arguments, options)
+				// again synchronously check for immediate failure
+				if( !child.pid){
+					// consume new error
+					child.on("error", x=> null)
+
+					// promise throwing original error
+					return err
+				}else{
+					err.catch(x=> undefined)
+				}
+			}
 		}
 
 		// fix up encoding if encoding set
