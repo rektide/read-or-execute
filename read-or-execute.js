@@ -5,10 +5,12 @@ var
   spawn= require( "mz/child_process").spawn,
   fs= require( "mz/fs")
 
+var execMode= fs.constants.S_IXUSR| fs.constants.S_IXGRP| fs.constants.S_IXOTH
+
 function checkExecutable( stat){
 	// could maybe should compute some kind of fancier "can this user execute"
 	// instead accept any execute bits
-	return stat.mode& 0x111
+	return stat.mode& execMode
 }
 
 async function readOrExecute( path, options){
@@ -40,14 +42,28 @@ async function readOrExecute( path, options){
 	// fork
 	if( isExecutable){
 		// spawn child
-		var child= spawn( options.path, options.arguments, options)
+		var child
+		try{
+			child = spawn( options.path, options.arguments, options)
+		}catch(e){
+			child = spawn( "./" + options.path, options.arguments, options)
+		}
+
+		// fix up encoding if encoding set
+		if( options.encoding){
+			child.stdout.setEncoding( options.encoding)
+		}
+		// decorate fact that this is an executable
 		child.stdout.readOrExecute= "execute"
+		//  end stdin (or allow caller to deal with this)
 		if( !options.childStart){
 			// by default finish stdin
+			child.stdin.end()
 		}else{
 			// allow `childStart` option to pass in custom init behavior
 			options.childStart.call( options, child)
 		}
+		// return output
 		return child.stdout
 	}else{
 		var stream= fs.createReadStream( path, options)
