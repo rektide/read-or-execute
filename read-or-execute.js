@@ -8,7 +8,7 @@ var
 function checkExecutable( stat){
 	// could maybe should compute some kind of fancier "can this user execute"
 	// instead accept any execute bits
-	return stat& 0x111
+	return stat.mode& 0x111
 }
 
 async function readOrExecute( path, options){
