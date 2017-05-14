@@ -42,10 +42,13 @@ async function readOrExecute( path, options){
 	// fork
 	if( isExecutable){
 		// spawn child
-		var child
-		try{
-			child = spawn( options.path, options.arguments, options)
-		}catch(e){
+		var child = spawn( options.path, options.arguments, options)
+		if( !child.pid){
+			// node instructs us to synchronously wait for error
+			// but this is easier and that'd be lame
+			// consume error
+			child.on("error", x=> null)
+			// try again, doing what createReadFile would do for us
 			child = spawn( "./" + options.path, options.arguments, options)
 		}
 
@@ -63,6 +66,7 @@ async function readOrExecute( path, options){
 			// allow `childStart` option to pass in custom init behavior
 			options.childStart.call( options, child)
 		}
+
 		// return output
 		return child.stdout
 	}else{
