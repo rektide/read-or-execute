@@ -3,7 +3,7 @@
 
 var
   spawn= require( "mz/child_process").spawn,
-  createReadStream= require( "mz/fs").createReadStream
+  fs= require( "mz/fs")
 
 function checkExecutable( stat){
 	// could maybe should compute some kind of fancier "can this user execute"
@@ -24,7 +24,7 @@ async function readOrExecute( path, options){
 	// we are now done with path
 
 	// default encoding
-	if( options.encoding=== False|| options.encoding=== null){
+	if( options.encoding=== false|| options.encoding=== null){
 		delete options.encoding
 	}else if( !options.encoding){
 		options.encoding= "utf8"
@@ -32,28 +32,41 @@ async function readOrExecute( path, options){
 
 	var
 	  // get stats
-	  stat= await fs.stat( this.path),
+	  stat= await fs.stat( options.path),
 	  // check stats
-	  executableCheck= this.checkExecutable|| checkExecutable,
-	  isExecutable= executableCheck.call(this, stat)
+	  executableCheck= options.checkExecutable|| checkExecutable,
+	  isExecutable= executableCheck.call(options, stat)
 
 	// fork
 	if( isExecutable){
 		// spawn child
-		var child= spawn( path, options.arguments, options)
+		var child= spawn( options.path, options.arguments, options)
 		child.stdout.readOrExecute= "execute"
 		if( !options.childStart){
 			// by default finish stdin
 		}else{
 			// allow `childStart` option to pass in custom init behavior
-			options.childStart.call( this, child)
+			options.childStart.call( options, child)
 		}
 		return child.stdout
 	}else{
-		var stream= createReadStream( path, this)
+		var stream= fs.createReadStream( path, options)
 		stream.readOrExecute= "read"
 		return stream
 	}
 }
 
+function main(){
+	var file= process.argv[2]
+	if( !file){
+		throw new Error("Expected one argument: file")
+	}
+	readOrExecute( file).then( e=> e.on( "data", console.log))
+}
+
 module.exports= readOrExecute
+module.exports.checkExecutable= checkExecutable
+
+if( typeof( require)!== "undefined"&& require.main=== module){
+	main()
+}
