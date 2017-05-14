@@ -1,0 +1,19 @@
+{
+	"name": "read-or-execute",
+	"version": "1.0.0",
+	"description": "Read or execute a file to get a content stream",
+	"main": "read-or-execute.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://archive.voodoowarez.com/read-or-execute"
+	},
+	"keywords": ["read-file", "config"],
+	"author": "rektide de la faye",
+	"license": "X11",
+	"dependencies": {
+		"mz": "^2.6.0"
+	}
+}
