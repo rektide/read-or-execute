@@ -1,8 +1,11 @@
 {
 	"name": "read-or-execute",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Read or execute a file to get a content stream",
 	"main": "read-or-execute.js",
+	"bin": {
+		"readorexecute": "./read-or-execute.js"
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
