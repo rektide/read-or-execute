@@ -1,6 +1,6 @@
 {
 	"name": "read-or-execute",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"description": "Read or execute a file to get a content stream",
 	"main": "read-or-execute.js",
 	"bin": {

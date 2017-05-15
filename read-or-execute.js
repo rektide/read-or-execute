@@ -74,6 +74,7 @@ async function readOrExecute( path, options){
 					// promise throwing original error
 					return err
 				}else{
+					// our substitute is running aok
 					err.catch(x=> undefined)
 				}
 			}
@@ -82,6 +83,7 @@ async function readOrExecute( path, options){
 		// fix up encoding if encoding set
 		if( options.encoding){
 			child.stdout.setEncoding( options.encoding)
+			child.stderr.setEncoding( options.encoding)
 		}
 		// decorate fact that this is an executable
 		child.stdout.readOrExecute= "execute"
@@ -93,6 +95,9 @@ async function readOrExecute( path, options){
 			// allow `childStart` option to pass in custom init behavior
 			options.childStart.call( options, child)
 		}
+		// really getting wild- attach stderr and child to stdout, which we're about to return
+		child.stdout.stderr= child.stderr
+		child.stdout.process= child
 
 		// return output
 		return child.stdout
@@ -103,12 +108,15 @@ async function readOrExecute( path, options){
 	}
 }
 
-function main(){
-	var file= process.argv[2]
+function main( file){
+	file= file|| process.argv[ 2]
 	if( !file){
 		throw new Error("Expected one argument: file")
 	}
-	readOrExecute( file).then( e=> e.on( "data", console.log))
+	return readOrExecute( file).then( function( stream){
+		stream.on( "data", console.log)
+		stream.stderr.on( "data", console.error)
+	})
 }
 
 module.exports= readOrExecute
